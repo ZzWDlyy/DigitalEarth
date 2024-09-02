@@ -1,0 +1,24 @@
+
+<map name="Draped Lines Demo">
+
+    <GDALImage name="world">
+        <url>./data/world.tif</url>
+    </GDALImage>
+            
+    <OGRFeatures name="world-data">
+        <url>F:/source/repos/earth_map_demo/earth_map_demo/data/world.shp</url>
+    </OGRFeatures>
+    
+    <Features name="world_boundaries" features="world-data">
+        <styles>
+            <style type="text/css">
+                world {
+                   stroke:             #ffff00;
+                   stroke-width:       4px;
+                   altitude-clamping:  terrain-drape;
+                }            
+            </style>
+        </styles>
+    </Features>
+  
+</map>

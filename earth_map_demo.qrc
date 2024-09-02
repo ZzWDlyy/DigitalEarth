@@ -1,0 +1,41 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qss/flatwhite.css</file>
+        <file>qss/lightblue.css</file>
+        <file>qss/psblack.css</file>
+        <file>qss/flatwhite/add_bottom.png</file>
+        <file>qss/flatwhite/add_left.png</file>
+        <file>qss/flatwhite/add_right.png</file>
+        <file>qss/flatwhite/add_top.png</file>
+        <file>qss/flatwhite/branch_close.png</file>
+        <file>qss/flatwhite/branch_open.png</file>
+        <file>qss/flatwhite/calendar_nextmonth.png</file>
+        <file>qss/flatwhite/calendar_prevmonth.png</file>
+        <file>qss/flatwhite/checkbox_checked.png</file>
+        <file>qss/flatwhite/checkbox_checked_disable.png</file>
+        <file>qss/flatwhite/checkbox_parcial.png</file>
+        <file>qss/flatwhite/checkbox_parcial_disable.png</file>
+        <file>qss/flatwhite/checkbox_unchecked.png</file>
+        <file>qss/flatwhite/checkbox_unchecked_disable.png</file>
+        <file>qss/flatwhite/radiobutton_checked.png</file>
+        <file>qss/flatwhite/radiobutton_checked_disable.png</file>
+        <file>qss/flatwhite/radiobutton_unchecked.png</file>
+        <file>qss/flatwhite/radiobutton_unchecked_disable.png</file>
+        <file>icon_3axusv3ezyt/close.png</file>
+        <file>icon_3axusv3ezyt/fullscreen-expand-filling.png</file>
+        <file>icon_3axusv3ezyt/minus-bold.png</file>
+        <file>icon_3axusv3ezyt/toggle-left.png</file>
+        <file>icon_3axusv3ezyt/toggle-right.png</file>
+        <file>data/wurenji.png</file>
+        <file>icon_3axusv3ezyt/max.png</file>
+        <file>icon_3axusv3ezyt/loading.png</file>
+        <file>icon_3axusv3ezyt/start.png</file>
+        <file>icon_3axusv3ezyt/map.png</file>
+        <file>icon_3axusv3ezyt/closeRange.png</file>
+        <file>icon_3axusv3ezyt/start_use.png</file>
+        <file>icon_3axusv3ezyt/home.png</file>
+        <file>icon_3axusv3ezyt/fuse.png</file>
+        <file>icon_3axusv3ezyt/update.png</file>
+        <file>icon_3axusv3ezyt/缩放.png</file>
+    </qresource>
+</RCC>
