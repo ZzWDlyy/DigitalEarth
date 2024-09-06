@@ -50,10 +50,13 @@
 #include <QJsonDocument>
 #include <QUrlQuery>
 #include <osgEarth/Viewpoint>
-
+#include <sqlite3.h>
+#include <osgEarth/Cache>
+#include <osgEarth/Registry>
 osg::ref_ptr<osgEarth::XYZImageLayer> xyzLayer1 = new osgEarth::XYZImageLayer();
 osg::ref_ptr<osgEarth::XYZImageLayer> xyzLayer2 = new osgEarth::XYZImageLayer();
-std::vector<std::pair<std::string, osg::ref_ptr<osgEarth::GDALImageLayer>>>MapList;
+std::vector<std::tuple<std::string, osg::ref_ptr<osgEarth::GDALImageLayer>, std::string>>MapList;
+
 
 earth_map_demo::earth_map_demo(QWidget *parent)
     : QMainWindow(parent)
@@ -118,18 +121,57 @@ earth_map_demo::earth_map_demo(QWidget *parent)
         });
     connect(ui.changeTileMapButton, &QPushButton::clicked, this, &earth_map_demo::onchangeTileMapButtonClicked);
     connect(ui.home, &QPushButton::clicked, this, &earth_map_demo::toHome);
-    //connect(ui.getRequest, &QPushButton::clicked, this, &earth_map_demo::startnetRequest);
-    connect(ui.subWidget, &QPushButton::clicked, this, &earth_map_demo::showsubWidget);
-    //connect(ui.matchAndFuse, &QPushButton::clicked, this, &earth_map_demo::matchAndFuse);
     connect(ui.tbn_max, &QPushButton::clicked, this, &earth_map_demo::ontbnmaxclicked);
     connect(ui.MapLayerList, &QListWidget::itemChanged, [=](QListWidgetItem* item) {
         int ChangeIndex = ui.MapLayerList->row(item);
         if (item->checkState() == Qt::Checked) {
-            MapList[ChangeIndex].second->setOpacity(1);
+            std::get<1>(MapList[ChangeIndex])->setOpacity(1); 
         }
         else {
-            MapList[ChangeIndex].second->setOpacity(0);
+            std::get<1>(MapList[ChangeIndex])->setOpacity(0);
         }
+        });
+    connect(ui.addClass, &QPushButton::clicked, [=]() {
+        bool ok;
+        QString text = QInputDialog::getText(this, "添加分组", "输入新的分组:", QLineEdit::Normal, "", &ok);
+        if (ok && !text.isEmpty()) {
+            ui.comboBox->addItem(text);
+        }
+        });
+    connect(ui.comboBox, &QComboBox::currentTextChanged, [=]() {
+        if (is_comboxFinished) {
+            ui.MapLayerList->clear();
+            for (const auto& tuple : MapList) {
+                std::get<1>(tuple)->setOpacity(0);
+            }
+            MapList.clear();
+            /*下拉栏改变时发生变化 */
+            sqlite3* db;
+            int rc = sqlite3_open("saveConfig.db", &db);
+            sqlite3_stmt* stmt;
+            std::string group_name_str = ui.comboBox->currentText().toUtf8().constData();
+            const char* group_name = group_name_str.c_str(); // 指定要查询的 group 值
+            const char* select_sql = "SELECT path FROM files WHERE group_name = ?";
+            rc = sqlite3_prepare_v2(db, select_sql, -1, &stmt, nullptr);
+            if (rc != SQLITE_OK) {
+                std::cerr << "Error preparing SQL statement: " << sqlite3_errmsg(db) << std::endl;
+            }
+            rc = sqlite3_bind_text(stmt, 1, group_name, -1, SQLITE_STATIC);
+            if (rc != SQLITE_OK) {
+                std::cerr << "Error binding text: " << sqlite3_errmsg(db) << std::endl;
+            }
+            while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+                const unsigned char* path = sqlite3_column_text(stmt, 0);
+                addAllMapLayer(QString::fromUtf8(reinterpret_cast<const char*>(path)));
+            }
+            if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
+                std::cerr << "Error stepping through the result set: " << sqlite3_errmsg(db) << std::endl;
+            }
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            
+        }
+
         });
     QVBoxLayout* layout = new QVBoxLayout;
     initialList();
@@ -176,9 +218,15 @@ void earth_map_demo::onInitialized()
     CPLSetConfigOption("CPL_DEBUG", "YES");
     CPLSetConfigOption("CPL_LOG", "../LOG/gdal.log");
     mRoot = new osg::Group;
-    
     //Map
+    osgEarth::CacheOptions *options = new osgEarth::CacheOptions();
+    options->setDriver("filesystem");
+    osg::ref_ptr<osgEarth::Cache> cache = osgEarth::CacheFactory::create(*options);
+    osgEarth::Registry::instance()->setDefaultCache(cache);
+    osgEarth::Registry::instance()->setDefaultCachePolicy(osgEarth::CachePolicy::USAGE_READ_WRITE);
     map = new osgEarth::Map();
+    map->setCache(cache); 
+
     //XYZ
     std::string xyzFile1 = "E:/mapdata/all/all/{z}/{x}/{y}.png";
     xyzLayer1->setName("xyz");
@@ -228,8 +276,42 @@ void earth_map_demo::onInitialized()
     widget->setMouseTracking(true);
 
     mRoot->addChild(mapNode);
-    
 
+    // 读取所有的节点并显示在QComboBox中
+    sqlite3* db;
+    int rc = sqlite3_open("saveConfig.db", &db);
+    sqlite3_stmt* stmt;
+    rc = sqlite3_prepare_v2(db, "SELECT DISTINCT group_name FROM files ORDER BY id", -1, &stmt, nullptr);
+    QStringList groupList;
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        const unsigned char* group = sqlite3_column_text(stmt, 0);
+        groupList.append(QString::fromUtf8(reinterpret_cast<const char*>(group)));
+    }
+    ui.comboBox->addItems(groupList);
+    is_comboxFinished = true;
+    // 显示所有已经加载的图层到其中
+    const char* group_name = "所有图层"; // 指定要查询的 group 值
+    const char* select_sql = "SELECT path FROM files WHERE group_name = ?";
+    
+    rc = sqlite3_prepare_v2(db, select_sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Error preparing SQL statement: " << sqlite3_errmsg(db) << std::endl;
+    }
+    rc = sqlite3_bind_text(stmt, 1, group_name, -1, SQLITE_STATIC);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Error binding text: " << sqlite3_errmsg(db) << std::endl;
+    }
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        const unsigned char* path = sqlite3_column_text(stmt, 0);
+        addAllMapLayer(QString::fromUtf8(reinterpret_cast<const char*>(path)));
+    }
+    if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
+        std::cerr << "Error stepping through the result set: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    
     annoLayer = new osgEarth::AnnotationLayer;
     map->addLayer(annoLayer);
     //mRoot->addChild(sky_node);
@@ -258,6 +340,13 @@ void earth_map_demo::onInitialized()
     //onViewChanged();
 
     //startnetRequest(list);
+   // 创建表格
+    char* zErrMsg = 0;
+    rc = sqlite3_open("saveConfig.db", &db);
+    const char* create_table_sql = "CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT, path TEXT, group_name TEXT)";
+    rc = sqlite3_exec(db, create_table_sql, 0, 0, &zErrMsg);
+
+   
     
 }
 
@@ -275,11 +364,69 @@ void earth_map_demo::addMapLayer() {
         std::string addFile = fileName.toStdString();
         osgEarth::GDALImageLayer::Options gdalOpt;
         gdalOpt.url() = addFile;
+        gdalOpt.cachePolicy() = osgEarth::CachePolicy::USAGE_READ_WRITE;
         osg::ref_ptr<osgEarth::GDALImageLayer> imgLayer = new osgEarth::GDALImageLayer(gdalOpt);
+        //将图层数据加入到数据库中
+        char* zErrMsg = 0;
+        sqlite3* db;
+        int rc = sqlite3_open("saveConfig.db", &db);
+        if (rc != SQLITE_OK) {
+            std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
+        }
+        else {
+            std::string sql = "INSERT OR REPLACE INTO files (filename, path, group_name) VALUES ('" + selectedFileName.toStdString()
+                + "', '" + addFile + "', '" + ui.comboBox->currentText().toStdString() + "')";
+            if (ui.comboBox->currentText().toStdString() != "所有图层") {
+                std::string sql1 = "INSERT OR REPLACE INTO files (filename, path, group_name) VALUES ('" + selectedFileName.toStdString()
+                    + "', '" + addFile + "', '所有图层" + "')";
+                rc = sqlite3_exec(db, sql1.c_str(), 0, 0, &zErrMsg);
+            }
+            rc = sqlite3_exec(db, sql.c_str(), 0, 0, &zErrMsg);
+            
+            if (rc != SQLITE_OK) {
+                std::cerr << "SQL error: " << zErrMsg << std::endl;
+                sqlite3_free(zErrMsg);
+            }
+            else {
+                std::cout << "Insert or replace operation completed successfully." << std::endl;
+            }
+            sqlite3_close(db);
+        }
         //将图层添加至图层管理中
-        MapList.push_back(std::make_pair(selectedFileName.toStdString(), imgLayer));
+        MapList.push_back(std::make_tuple (selectedFileName.toStdString(), imgLayer, ui.comboBox->currentText().toStdString()));
         QListWidgetItem* ListItem = new QListWidgetItem(selectedFileName);
         QSize customSize(100, 50); 
+        QFont q(QStringLiteral("HGHT_CNKI"), 18);
+        // 设置复选框与字体大小
+        ListItem->setFont(q);
+        ListItem->setSizeHint(customSize);
+        ListItem->setFlags(ListItem->flags() | Qt::ItemIsUserCheckable);
+        ListItem->setCheckState(Qt::Checked);
+        ui.MapLayerList->addItem(ListItem);
+        mapNode->getMap()->addLayer(imgLayer);
+        widget->getOsgViewer()->setSceneData(mRoot);
+    }
+}
+
+void earth_map_demo::addAllMapLayer(QString path) {
+    QString fileName = path;
+    // 获取文件名（不包括路径）
+    QFileInfo fileInfo(fileName);
+    QString selectedFileName = fileInfo.fileName();
+    // 如果未选择文件，返回
+    if (fileName.isEmpty())
+        return;
+
+    else {
+        //加载文件
+        std::string addFile = fileName.toStdString();
+        osgEarth::GDALImageLayer::Options gdalOpt;
+        gdalOpt.url() = addFile;
+        osg::ref_ptr<osgEarth::GDALImageLayer> imgLayer = new osgEarth::GDALImageLayer(gdalOpt);
+        //将图层添加至图层管理中
+        MapList.push_back(std::make_tuple(selectedFileName.toStdString(), imgLayer, ui.comboBox->currentText().toStdString()));
+        QListWidgetItem* ListItem = new QListWidgetItem(selectedFileName);
+        QSize customSize(100, 50);
         QFont q(QStringLiteral("HGHT_CNKI"), 18);
         // 设置复选框与字体大小
         ListItem->setFont(q);
@@ -1166,13 +1313,6 @@ void earth_map_demo::showImage2() {
     QString infraredImagePath = fileName.replace("ground truth", "ir");
     ImageDialog dialog(infraredImagePath, "红外模态");
     dialog.exec();
-    //subW->uploadImageArg(infraredImagePath);//上传文件至服务器中，注意文件名不要重复，会覆盖别的文件。
-    /*QFileInfo infraredFileInfo(infraredImagePath);
-    QString infraredBaseName = infraredFileInfo.fileName();
-    subW->pathIr = "ir"+infraredBaseName;
-    subW->startmatchRequestone(filepath,0);*/
-    /*ImageDialog dialog("E:/pywork/modeldeploy/matchResult/match.jpg", "红外模态");
-    dialog.exec();*/
 }
 
 void earth_map_demo::showImage3() {
@@ -1222,44 +1362,6 @@ void earth_map_demo::showsubWidget() {
     subW->raise();
 }
 
-//void earth_map_demo::matchAndFuse() {
-//    counter = 0;
-//    connect(timer, &QTimer::timeout, this, &earth_map_demo::updateProgress);
-//    timer->start(1000); // 定时器每100毫秒触发一次
-//    ui.progressBar->setVisible(true);
-//    ui.progressBar->setValue(0);
-//    QString fileName = fileNames.at(currentIndex);
-//    QString groundName = fileName;
-//    QString infraredImagePath = fileName.replace("ground truth", "ir");
-//    QString multiSpectralImagePath450 = fileName.replace("ir", "ms450");
-//    QString multiSpectralImagePath840 = fileName.replace("ms450", "ms840");
-//
-//    QFileInfo groundFileInfo(groundName);
-//    QString groundBaseName = groundFileInfo.fileName();
-//    QFileInfo infraredFileInfo(infraredImagePath);
-//    QString infraredBaseName = infraredFileInfo.fileName();
-//    QFileInfo multiSpectral450FileInfo(multiSpectralImagePath450);
-//    QString multiSpectral450BaseName = multiSpectral450FileInfo.fileName();
-//    QFileInfo multiSpectral840FileInfo(multiSpectralImagePath840);
-//    QString multiSpectral840BaseName = multiSpectral840FileInfo.fileName();
-//    infraredImagePath = infraredImagePath.replace(groundBaseName, "ir" + infraredBaseName);
-//    multiSpectralImagePath450 = multiSpectralImagePath450.replace(groundBaseName, "ms450" + multiSpectral450BaseName);
-//    multiSpectralImagePath840 = multiSpectralImagePath840.replace(groundBaseName, "ms840" + multiSpectral840BaseName);
-//    
-//    subW->setPath(groundBaseName, "ir" + infraredBaseName, "ms450" + multiSpectral450BaseName, "ms840" + multiSpectral840BaseName);
-//    subW->uploadImageArg(groundName);
-//    subW->uploadImageArg(infraredImagePath);
-//    subW->uploadImageArg(multiSpectralImagePath450);
-//    subW->uploadImageArg(multiSpectralImagePath840);
-//
-//    //配准
-//    subW->startmatchRequest();
-//    ////融合
-//    subW->startnetRequest();
-//    counter = 95;
-//    ui.progressBar->setVisible(false);
-//    replaceFuseImage();
-//}
 
 
 void earth_map_demo::updateProgress() {

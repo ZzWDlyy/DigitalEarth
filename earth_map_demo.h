@@ -31,6 +31,7 @@
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
 #include "subWindow.h"
+#include <sqlite3.h>
 //自定义对话框
 class ImageDialog : public QDialog {
 public:
@@ -137,6 +138,8 @@ public:
 private:
     bool is_Stop = false;
     bool is_max = false;
+    bool is_comboxFinished = false;
+    sqlite3* db;//数据库
     osgEarth::AnnotationLayer* annoLayer;
     CalculationThread* calculationThread=NULL;
     int currentIndex = 0;
@@ -186,7 +189,7 @@ private:
     void initialList();
     void displayNextImage();
     void replaceFuseImage();
-    
+    void addAllMapLayer(QString path);
     //subWindow* subW;
     //QWidget* subW;
     subWindow* subW;
