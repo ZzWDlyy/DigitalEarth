@@ -130,7 +130,7 @@ border:0px;</string>
 color: rgb(204, 204, 204);</string>
     </property>
     <property name="text">
-     <string>无人机多模态影像系统</string>
+     <string>多人机多模态影像系统</string>
     </property>
    </widget>
    <widget class="QToolButton" name="collapse">
