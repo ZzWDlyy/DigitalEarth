@@ -53,6 +53,7 @@
 #include <sqlite3.h>
 #include <osgEarth/Cache>
 #include <osgEarth/Registry>
+#include <Qcombobox>
 osg::ref_ptr<osgEarth::XYZImageLayer> xyzLayer1 = new osgEarth::XYZImageLayer();
 osg::ref_ptr<osgEarth::XYZImageLayer> xyzLayer2 = new osgEarth::XYZImageLayer();
 std::vector<std::tuple<std::string, osg::ref_ptr<osgEarth::GDALImageLayer>, std::string>>MapList;
@@ -177,10 +178,6 @@ earth_map_demo::earth_map_demo(QWidget *parent)
     initialList();
     layout->addWidget(widget);
     ui.frame->setLayout(layout);
-    subW = new subWindow(this);
-    subW->setGeometry(310, 100, 1540, 870);
-    subW->setVisible(false);
-    subW->setWindowFlag(Qt::FramelessWindowHint);
     ui.progressBar->setMinimum(0);
     ui.progressBar->setMaximum(100);
     ui.progressBar->setValue(0);
@@ -189,7 +186,6 @@ earth_map_demo::earth_map_demo(QWidget *parent)
 }
 void earth_map_demo::toHome() {
     ui.frame->setVisible(true);
-    subW->setVisible(false);
     ui.frame->raise();
     osgEarth::Viewpoint vp("demo",
         0,  // 焦点经度 ，单位角度。
@@ -374,6 +370,7 @@ void earth_map_demo::addMapLayer() {
             std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
         }
         else {
+            char* zErrMsg = 0;
             std::string sql = "INSERT OR REPLACE INTO files (filename, path, group_name) VALUES ('" + selectedFileName.toStdString()
                 + "', '" + addFile + "', '" + ui.comboBox->currentText().toStdString() + "')";
             if (ui.comboBox->currentText().toStdString() != "所有图层") {
@@ -688,8 +685,7 @@ void earth_map_demo::ontbnmaxclicked()
       ui.tbn_max->move(geo.x() + 60, geo.y());
       ui.frame1->setGeometry(0,0,2000,100);
       ui.frame->setGeometry(300, -21, 1630, 1010);
-      subW->setGeometry(310, 100, 1540, 1000);
-      subW->ui.frame->setGeometry(0, 0, 1540, 1000);
+      //subW->ui.frame->setGeometry(0, 0, 1540, 1000);
       
   }
   else {
@@ -717,8 +713,7 @@ void earth_map_demo::onCollapseButtonClicked()
         ui.tabWidget->move(- ui.tabWidget->width(), 80); // 替换为需要折叠隐藏的控件
         // 其他折叠操作...
         ui.frame->setGeometry(-15,-10,1877,895);
-        subW->setGeometry(60, 100, 1800, 1000);
-        subW->ui.frame->setGeometry(0, 0, 1800, 1000);
+        //subW->ui.frame->setGeometry(0, 0, 1800, 1000);
     }
     else {
         // 展开
@@ -728,8 +723,7 @@ void earth_map_demo::onCollapseButtonClicked()
         ui.tabWidget->show();
         ui.frame->setGeometry(300, -10, 1650, 900);
         //ui.frame_3->setGeometry(-5,95, 2100, 895);
-        subW->setGeometry(310, 100, 1540, 1000);
-        subW->ui.frame->setGeometry(0, 0, 1540, 1000);
+        //subW->ui.frame->setGeometry(0, 0, 1540, 1000);
     }
 }
 
@@ -1357,9 +1351,9 @@ void earth_map_demo::stopThead() {
 
 
 void earth_map_demo::showsubWidget() {
-    ui.frame->setVisible(false);
+  /*  ui.frame->setVisible(false);
     subW->setVisible(true);
-    subW->raise();
+    subW->raise();*/
 }
 
 

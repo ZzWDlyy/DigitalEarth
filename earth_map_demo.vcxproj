@@ -124,21 +124,18 @@
     <ClCompile Include="MousePositionEvenHandler.cpp" />
     <ClCompile Include="move_redo.cpp" />
     <ClCompile Include="Registration.cpp" />
-    <ClCompile Include="subWindow.cpp" />
     <QtRcc Include="earth_map_demo.qrc" />
     <QtUic Include="earth_map_demo.ui" />
     <QtMoc Include="earth_map_demo.h" />
     <ClCompile Include="earth_map_demo.cpp" />
     <ClCompile Include="get_provinces.cpp" />
     <ClCompile Include="main.cpp" />
-    <QtUic Include="subWindow.ui" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CSVHandler.h" />
     <ClInclude Include="Location.h" />
     <ClInclude Include="MousePositionEvenHandler.h" />
     <ClInclude Include="Registration.h" />
-    <ClInclude Include="subWindow.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

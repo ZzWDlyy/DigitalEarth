@@ -29,9 +29,9 @@
 #include <QDebug>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
-#include <QtNetwork/QNetworkRequest>
-#include "subWindow.h"
+#incude <QtNetwork/QNetworkRequest>
 #include <sqlite3.h>
+#include <QLabel>
 //自定义对话框
 class ImageDialog : public QDialog {
 public:

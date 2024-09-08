@@ -52,9 +52,6 @@
     <ClCompile Include="Registration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="subWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Location.h">
@@ -69,13 +66,5 @@
     <ClInclude Include="Registration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="subWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <QtUic Include="subWindow.ui">
-      <Filter>Form Files</Filter>
-    </QtUic>
   </ItemGroup>
 </Project>
