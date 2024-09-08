@@ -20,7 +20,8 @@ vs2022
 
 ## 最终效果
 
-![image-20240906154426553](assets/image-20240906154426553.png)
+![image-20240906154426553](https://github.com/user-attachments/assets/2fd6fbfb-6fb5-4cb7-848b-dbf5d815dddf)
+
 
 ## 联系
 
