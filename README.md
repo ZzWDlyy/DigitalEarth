@@ -22,11 +22,6 @@ vs2022
 ## 最终效果
 ![image-20240906154426553](https://github.com/user-attachments/assets/aaae7788-bb3e-48db-9360-3725630d2365)
 
-<<<<<<< HEAD
-![image-20240906154426553](https://github.com/user-attachments/assets/2fd6fbfb-6fb5-4cb7-848b-dbf5d815dddf)
-
-=======
->>>>>>> 5633d1e30d98d3586b3523ebac125a5e593b8c58
 
 ## 联系
 
