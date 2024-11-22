@@ -23,8 +23,4 @@ vs2022
 ![image-20240906154426553](https://github.com/user-attachments/assets/aaae7788-bb3e-48db-9360-3725630d2365)
 
 
-## 联系
 
-对本项目有任何建议与想法可以联系：
-
-QQ:1985824763
